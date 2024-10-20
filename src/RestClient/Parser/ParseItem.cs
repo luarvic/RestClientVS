@@ -72,6 +72,8 @@ namespace RestClient
                 }
             }
 
+            clean = clean.ExpandRequestVariables(Document);
+
             return clean.Trim();
         }
 

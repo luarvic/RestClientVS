@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RestClient.Client;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -31,6 +32,8 @@ namespace RestClient
         public override int End => Children.LastOrDefault()?.End ?? 0;
         public bool IsActive { get; set; }
         public bool LastRunWasSuccess { get; set; } = true;
+        public string? Name { get; set; }
+        public RequestResult? Result { get; set; }
         private Action _completionAction { get; set; }
 
         public void StartActive(Action OnCompletion)
@@ -82,6 +85,8 @@ namespace RestClient
                     clean = clean.Replace("{{" + key + "}}", _document.VariablesExpanded[key].Trim());
                 }
             }
+
+            clean = clean.ExpandRequestVariables(Document);
 
             return clean.Trim();
         }

@@ -36,6 +36,10 @@ namespace RestClient.Client
                 {
                     result.ErrorMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
                 }
+                finally
+                {
+                    request.Result = result;
+                }
             }
 
             return result;

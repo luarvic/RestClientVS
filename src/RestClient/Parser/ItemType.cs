@@ -2,6 +2,7 @@
 {
     public enum ItemType
     {
+        RequestVariableName,
         VariableName,
         VariableValue,
         Comment,
