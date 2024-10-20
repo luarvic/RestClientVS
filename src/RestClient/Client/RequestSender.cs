@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,8 +9,6 @@ namespace RestClient.Client
 {
     public static class RequestSender
     {
-
-
         public static async Task<RequestResult> SendAsync(Request request, TimeSpan timeOut, CancellationToken cancellationToken = default)
         {
             RequestResult result = new() { RequestToken = request };
@@ -18,6 +18,8 @@ namespace RestClient.Client
             {
                 AllowAutoRedirect = true,
                 UseDefaultCredentials = true,
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true,
+                CookieContainer = BuildCookieContainer(requestMessage),
             };
 
             using (var client = new HttpClient(handler))
@@ -36,9 +38,32 @@ namespace RestClient.Client
                 {
                     result.ErrorMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
                 }
+                finally
+                {
+                    request.Result = result;
+                }
             }
 
             return result;
+        }
+
+        private static CookieContainer BuildCookieContainer(HttpRequestMessage requestMessage)
+        {
+            var cookieContainer = new CookieContainer();
+            var cookieHeader = requestMessage.Headers
+                .FirstOrDefault(x => string.Equals(x.Key, "cookie", StringComparison.InvariantCultureIgnoreCase));
+            if (cookieHeader.Value != null && cookieHeader.Value.Any())
+            {
+                var cookieRaw = cookieHeader.Value.FirstOrDefault();
+                cookieRaw.Split(';').ToList().ForEach(x =>
+                {
+                    var cookie = x.Split('=');
+                    var newCookie = new Cookie(cookie[0].Trim(), cookie[1].Trim());
+                    cookieContainer.Add(new Uri(requestMessage.RequestUri.GetLeftPart(UriPartial.Authority)),
+                        newCookie);
+                });
+            }
+            return cookieContainer;
         }
 
         private static HttpRequestMessage BuildRequest(Request request, RequestResult result)

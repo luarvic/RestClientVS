@@ -11,6 +11,7 @@ namespace RestClient
         private static readonly Regex _regexHeader = new(@"^(?<name>[^\s]+)?([\s]+)?(?<operator>:)(?<value>.+)", RegexOptions.Compiled);
         private static readonly Regex _regexVariable = new(@"^(?<name>@[^\s]+)\s*(?<equals>=)\s*(?<value>.+)", RegexOptions.Compiled);
         private static readonly Regex _regexRef = new(@"{{[\w]+}}", RegexOptions.Compiled);
+        private static readonly Regex _regexRequestVariable = new(@"^(?<declaration>#\s+@name)\s*(?<name>[_a-zA-Z][_a-zA-Z0-9]*)\s*$", RegexOptions.Compiled);
 
         public bool IsParsing { get; private set; }
         public bool IsValid { get; private set; }
@@ -61,8 +62,13 @@ namespace RestClient
             var trimmedLine = line.Trim();
             List<ParseItem> items = new();
 
+            // Request variable declaration
+            if (IsMatch(_regexRequestVariable, trimmedLine, out Match matchRequestVar))
+            {
+                items.Add(ToParseItem(matchRequestVar, start, "name", ItemType.RequestVariableName, false)!);
+            }
             // Comment
-            if (trimmedLine.StartsWith(Constants.CommentChar.ToString()))
+            else if (trimmedLine.StartsWith(Constants.CommentChar.ToString()))
             {
                 items.Add(ToParseItem(line, start, ItemType.Comment, false));
             }
@@ -241,6 +247,11 @@ namespace RestClient
                     if (currentRequest?.Version != null)
                     {
                         currentRequest?.Children?.Add(currentRequest.Version);
+                    }
+
+                    if (currentRequest != null && item.Previous?.Previous?.Type == ItemType.RequestVariableName)
+                    {
+                        currentRequest.Name = item.Previous?.Previous?.Text;
                     }
                 }
 

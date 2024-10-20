@@ -9,9 +9,9 @@ namespace RestClientVS
     [Guid(PackageGuids.RestEditorFactoryString)]
     public class LanguageFactory : LanguageBase
     {
-        public const string LanguageName = "Rest";
-        public const string HttpFileExtension = ".http";
-        public const string RestFileExtension = ".rest";
+        public const string LanguageName = "RestX";
+        public const string HttpFileExtension = ".httpx";
+        public const string RestFileExtension = ".restx";
         
         private DropdownBars _dropdownBars;
 

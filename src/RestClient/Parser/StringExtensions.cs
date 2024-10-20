@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace RestClient
 {
@@ -18,5 +20,20 @@ namespace RestClient
         /// </summary>
         public static string GetFirstToken(this string input, char separator = ';') =>
             input.Split(separator)[0];
+
+        /// <summary>
+        /// Returns the segment at the specified index from a string separated by a separator.
+        /// </summary>
+        /// <param name="input">The string with separators.</param>
+        /// <param name="index">The index.</param>
+        /// <param name="remainder">The output parameter containing the string after the segment.</param>
+        /// <param name="separator">The separator.</param>
+        /// <returns>The segment.</returns>
+        public static string GetSegment(this string input, int index, out string remainder, string separator = ".")
+        {
+            var segments = input.Split(separator.ToCharArray()).ToArray();
+            remainder = string.Join(separator, segments.Skip(index + 1).ToArray());
+            return segments.ElementAtOrDefault(index);
+        }
     }
 }

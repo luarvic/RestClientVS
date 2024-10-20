@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using RestClient.Parser;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace RestClient
@@ -71,6 +72,8 @@ namespace RestClient
                     clean = clean.Replace("{{" + key + "}}", Document.VariablesExpanded[key].Trim());
                 }
             }
+
+            clean = ParserHelpers.ExpandRequestVariables(clean, Document);
 
             return clean.Trim();
         }
