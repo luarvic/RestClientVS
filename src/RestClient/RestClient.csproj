@@ -14,4 +14,8 @@
     <Compile Remove="Parser\Url.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="JsonPath.Net" Version="1.1.6" />
+  </ItemGroup>
+
 </Project>

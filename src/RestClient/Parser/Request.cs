@@ -1,4 +1,5 @@
 ﻿using RestClient.Client;
+using RestClient.Parser;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -86,7 +87,7 @@ namespace RestClient
                 }
             }
 
-            clean = clean.ExpandRequestVariables(Document);
+            clean = ParserHelpers.ExpandRequestVariables(clean, Document);
 
             return clean.Trim();
         }

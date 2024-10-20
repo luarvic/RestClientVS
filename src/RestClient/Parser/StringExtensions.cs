@@ -22,43 +22,6 @@ namespace RestClient
             input.Split(separator)[0];
 
         /// <summary>
-        /// Expands request variables in a string by replacing them with their values.
-        /// </summary>
-        /// <param name="input">The string to process.</param>
-        /// <param name="document">The document that contains requests.</param>
-        public static string ExpandRequestVariables(this string input, Document document)
-        {
-            return Regex.Replace(input, Constants.RegexObjectRef, match =>
-            {
-                var firstSegment = match.Groups[Constants.RegexObjectRefGroupName].Value.GetSegment(0, out var remainder);
-                var request = document.Requests.FirstOrDefault(x => x.Name == firstSegment);
-                return request == null || request.Result == null ? match.Value : remainder.GetPropertyValue(request.Result);
-            });
-        }
-
-        /// <summary>
-        /// Returns the string value of a property from an object by its string representation.
-        /// E.g. "Foo.Bar".GetPropertyValue(obj) would return obj.Foo.Bar.ToString().
-        /// </summary>
-        /// <param name="input">The string that represent the object property.</param>
-        /// <param name="obj">The object.</param>
-        /// <returns>The object.</returns>
-        public static string GetPropertyValue(this string input, object obj)
-        {
-            var firstSegment = input.GetSegment(0, out var remainder);
-            if (string.IsNullOrEmpty(firstSegment))
-            {
-                return obj.ToString();
-            }
-            var value = obj.GetType().GetProperty(firstSegment)?.GetValue(obj);
-            if (value == null)
-            {
-                return string.Empty;
-            }
-            return remainder.GetPropertyValue(value);
-        }
-
-        /// <summary>
         /// Returns the segment at the specified index from a string separated by a separator.
         /// </summary>
         /// <param name="input">The string with separators.</param>
