@@ -35,5 +35,11 @@ namespace RestClient
             remainder = string.Join(separator, segments.Skip(index + 1).ToArray());
             return segments.ElementAtOrDefault(index);
         }
+
+        public static Tuple<string, string> SplitIntoTuple(this string input, char separator = '=')
+        {
+            var values = input.Split(separator);
+            return new Tuple<string, string>(values.FirstOrDefault(), values.Skip(1).FirstOrDefault());
+        }
     }
 }

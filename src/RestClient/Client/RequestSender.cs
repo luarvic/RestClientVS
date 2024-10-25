@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,6 +10,8 @@ namespace RestClient.Client
 {
     public static class RequestSender
     {
+        private const string SetCookieHeaderName = "Set-Cookie";
+
         public static async Task<RequestResult> SendAsync(Request request, TimeSpan timeOut, CancellationToken cancellationToken = default)
         {
             RequestResult result = new() { RequestToken = request };
@@ -19,7 +22,7 @@ namespace RestClient.Client
                 AllowAutoRedirect = true,
                 UseDefaultCredentials = true,
                 ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true,
-                CookieContainer = BuildCookieContainer(requestMessage),
+                CookieContainer = BuildCookieContainer(),
             };
 
             using (var client = new HttpClient(handler))
@@ -29,6 +32,7 @@ namespace RestClient.Client
                 try
                 {
                     result.Response = await client.SendAsync(requestMessage, cancellationToken);
+                    SetCookies(result.Response.Headers, requestMessage.RequestUri.Host);
                 }
                 catch (TaskCanceledException)
                 {
@@ -47,21 +51,28 @@ namespace RestClient.Client
             return result;
         }
 
-        private static CookieContainer BuildCookieContainer(HttpRequestMessage requestMessage)
+        private static void SetCookies(HttpHeaders headers, string host)
+        {
+            var setCookieHeaders = headers.TryGetValues(SetCookieHeaderName, out var values) ? values : Array.Empty<string>();
+            foreach (var setCookieHeader in setCookieHeaders)
+            {
+                var setCookieHeaderItems = setCookieHeader.Split(';');
+                var setCookieHeaderFirstItem = setCookieHeaderItems.FirstOrDefault();
+                if (setCookieHeaderFirstItem == null)
+                {
+                    continue;
+                }
+                var (key, value) = setCookieHeaderFirstItem.SplitIntoTuple();
+                Cookies.GetInstance().Set(host, key, value);
+            }
+        }
+
+        private static CookieContainer BuildCookieContainer()
         {
             var cookieContainer = new CookieContainer();
-            var cookieHeader = requestMessage.Headers
-                .FirstOrDefault(x => string.Equals(x.Key, "cookie", StringComparison.InvariantCultureIgnoreCase));
-            if (cookieHeader.Value != null && cookieHeader.Value.Any())
+            foreach (var cookie in Cookies.GetInstance())
             {
-                var cookieRaw = cookieHeader.Value.FirstOrDefault();
-                cookieRaw.Split(';').ToList().ForEach(x =>
-                {
-                    var cookie = x.Split('=');
-                    var newCookie = new Cookie(cookie[0].Trim(), cookie[1].Trim());
-                    cookieContainer.Add(new Uri(requestMessage.RequestUri.GetLeftPart(UriPartial.Authority)),
-                        newCookie);
-                });
+                cookieContainer.Add(new Cookie(cookie.Key, cookie.Value, default, cookie.Host));
             }
             return cookieContainer;
         }

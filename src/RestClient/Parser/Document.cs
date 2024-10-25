@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using RestClient.Client;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace RestClient
@@ -15,9 +16,7 @@ namespace RestClient
         }
 
         public List<ParseItem> Items { get; private set; } = new List<ParseItem>();
-
         public Dictionary<string, string>? VariablesExpanded => _variables;
-
         public List<Request> Requests { get; private set; } = new();
         public List<Variable> Variables { get; private set; } = new();
 

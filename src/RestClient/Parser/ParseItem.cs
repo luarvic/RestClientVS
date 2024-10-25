@@ -73,7 +73,7 @@ namespace RestClient
                 }
             }
 
-            clean = ParserHelpers.ExpandRequestVariables(clean, Document);
+            clean = ReferenceParser.ExpandReference(clean, Document);
 
             return clean.Trim();
         }
