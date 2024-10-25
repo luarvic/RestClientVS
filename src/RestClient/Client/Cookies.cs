@@ -57,11 +57,8 @@ namespace RestClient.Client
 
         public bool Set(string host, string key, string value)
         {
+            Remove(host, key);
             var cookie = new Cookie(host, key, value);
-            if (_items.Contains(cookie))
-            {
-                _items.Remove(cookie);
-            }
             return _items.Add(cookie);
         }
 

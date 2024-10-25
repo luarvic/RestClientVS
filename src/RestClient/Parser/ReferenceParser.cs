@@ -1,5 +1,6 @@
 ﻿using Json.Path;
 using RestClient.Client;
+using System;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Text.Json.Nodes;
@@ -17,6 +18,7 @@ namespace RestClient.Parser
         private const string ResponseReference = "response";
         private const string HeadersReference = "headers";
         private const string BodyReference = "body";
+        private const string EnvironmentReference = "environment";
 
         public static string ExpandReference(string input, Document document)
         {
@@ -68,6 +70,7 @@ namespace RestClient.Parser
             return firstSegment switch
             {
                 CookiesReference => Cookies.GetInstance().Get(secondSegment, thirdSegment).Value,
+                EnvironmentReference => Environment.GetEnvironmentVariable(secondSegment),
                 _ => null,
             };
         }

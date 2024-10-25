@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace RestClient
 {
@@ -36,10 +35,23 @@ namespace RestClient
             return segments.ElementAtOrDefault(index);
         }
 
+        /// <summary>
+        /// Splits a string into a tuple using the specified separator.
+        /// </summary>
+        /// <param name="input">The string to be separated into a tuple.</param>
+        /// <param name="separator">The separator character.</param>
+        /// <returns>The tuple.</returns>
+        /// <exception cref="ArgumentException"></exception>
         public static Tuple<string, string> SplitIntoTuple(this string input, char separator = '=')
         {
-            var values = input.Split(separator);
-            return new Tuple<string, string>(values.FirstOrDefault(), values.Skip(1).FirstOrDefault());
+            var separatorIndex = input.IndexOf(separator);
+            if (separatorIndex == 0)
+            {
+                throw new ArgumentException("Separator not found in input string.");
+            }
+            string beforeSeparator = input.Substring(0, separatorIndex);
+            string afterSeparator = input.Substring(separatorIndex + 1);
+            return new Tuple<string, string>(beforeSeparator.Trim(), afterSeparator.Trim());
         }
     }
 }
