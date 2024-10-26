@@ -2,7 +2,6 @@
 {
     public enum ItemType
     {
-        RequestVariableName,
         VariableName,
         VariableValue,
         Comment,
@@ -15,5 +14,7 @@
         Reference,
         EmptyLine,
         Request,
+        OutputOperator,
+        RequestVariableName,
     }
 }

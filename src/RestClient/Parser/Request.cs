@@ -11,29 +11,27 @@ namespace RestClient
     {
         private readonly Document _document;
 
-        public Request(Document document, ParseItem method, ParseItem url, ParseItem? version) : base(method.Start, method.Text, document, ItemType.Request)
+        public Request(Document document, ParseItem method, ParseItem url, ParseItem? version, ParseItem? name) : base(method.Start, method.Text, document, ItemType.Request)
         {
             _document = document;
             Method = method;
             Url = url;
             Version = version;
+            Name = name;
         }
 
         public List<ParseItem>? Children { get; set; } = new List<ParseItem>();
 
         public ParseItem Method { get; }
         public ParseItem Url { get; }
-
         public ParseItem? Version { get; }
-
+        public ParseItem? Name { get; set; }
         public List<Header>? Headers { get; } = new();
-
         public string? Body { get; set; }
         public override int Start => Method?.Start ?? 0;
         public override int End => Children.LastOrDefault()?.End ?? 0;
         public bool IsActive { get; set; }
         public bool LastRunWasSuccess { get; set; } = true;
-        public string? Name { get; set; }
         public RequestResult? Result { get; set; }
         private Action _completionAction { get; set; }
 
@@ -87,7 +85,7 @@ namespace RestClient
                 }
             }
 
-            clean = ReferenceParser.ExpandReference(clean, Document);
+            clean = ReferenceParser.Parse(clean, Document);
 
             return clean.Trim();
         }

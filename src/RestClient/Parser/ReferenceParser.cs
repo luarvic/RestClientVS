@@ -20,7 +20,7 @@ namespace RestClient.Parser
         private const string BodyReference = "body";
         private const string EnvironmentReference = "environment";
 
-        public static string ExpandReference(string input, Document document)
+        public static string Parse(string input, Document document)
         {
             return Regex.Replace(input, RegexObjectRef, match =>
             {
@@ -31,7 +31,8 @@ namespace RestClient.Parser
                     case GlobalContextReference:
                         return EvaluateExpression(expression) ?? match.Value;
                     default:
-                        var request = document.Requests.FirstOrDefault(x => x.Name == firstSegment);
+                        var request = document.Requests
+                            .FirstOrDefault(x => x.Name?.Text == firstSegment);
                         return request == null || request.Result == null
                             ? match.Value
                             : EvaluateExpression(expression, request.Result) ?? match.Value;

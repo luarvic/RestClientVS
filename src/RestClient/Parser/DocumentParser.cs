@@ -7,11 +7,10 @@ namespace RestClient
 {
     public partial class Document
     {
-        private static readonly Regex _regexUrl = new(@"^((?<method>get|post|patch|put|delete|head|options|trace))\s*(?<url>[^\s]+)\s*(?<version>HTTP/.*)?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex _regexUrl = new(@"^(?<method>get|post|patch|put|delete|head|options|trace)\s*(?<url>[^\s]+)\s*(?<version>HTTP\/\S*)?\s*(?<output>>)?\s*(?<name>@[_a-zA-Z][_a-zA-Z0-9]*)?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex _regexHeader = new(@"^(?<name>[^\s]+)?([\s]+)?(?<operator>:)(?<value>.+)", RegexOptions.Compiled);
         private static readonly Regex _regexVariable = new(@"^(?<name>@[^\s]+)\s*(?<equals>=)\s*(?<value>.+)", RegexOptions.Compiled);
-        private static readonly Regex _regexRef = new(@"{{[\w]+}}", RegexOptions.Compiled);
-        private static readonly Regex _regexRequestVariable = new(@"^(?<declaration>#\s+@name)\s*(?<name>[_a-zA-Z][_a-zA-Z0-9]*)\s*$", RegexOptions.Compiled);
+        private static readonly Regex _regexReference = new(@"{{[\w]+}}", RegexOptions.Compiled);
 
         public bool IsParsing { get; private set; }
         public bool IsValid { get; private set; }
@@ -62,13 +61,8 @@ namespace RestClient
             var trimmedLine = line.Trim();
             List<ParseItem> items = new();
 
-            // Request variable declaration
-            if (IsMatch(_regexRequestVariable, trimmedLine, out Match matchRequestVar))
-            {
-                items.Add(ToParseItem(matchRequestVar, start, "name", ItemType.RequestVariableName, false)!);
-            }
             // Comment
-            else if (trimmedLine.StartsWith(Constants.CommentChar.ToString()))
+            if (trimmedLine.StartsWith(Constants.CommentChar.ToString()))
             {
                 items.Add(ToParseItem(line, start, ItemType.Comment, false));
             }
@@ -94,20 +88,33 @@ namespace RestClient
                 ParseItem method = ToParseItem(matchUrl, start, "method", ItemType.Method)!;
                 ParseItem url = ToParseItem(matchUrl, start, "url", ItemType.Url)!;
                 ParseItem? version = ToParseItem(matchUrl, start, "version", ItemType.Version);
-                items.Add(new Request(this, method, url, version));
+                ParseItem? output = ToParseItem(matchUrl, start, "output", ItemType.OutputOperator);
+                ParseItem? name = ToParseItem(matchUrl, start, "name", ItemType.RequestVariableName);
+                items.Add(new Request(this, method, url, version, name));
                 items.Add(method);
                 items.Add(url);
-
                 if (version != null)
                 {
                     items.Add(version);
+                }
+                if (output != null)
+                {
+                    items.Add(output);
+                }
+                if (name != null)
+                {
+                    items.Add(name);
                 }
             }
             // Header
             else if (tokens.Count > 0 && IsMatch(_regexHeader, trimmedLine, out Match matchHeader))
             {
                 ParseItem? prev = tokens.Last();
-                if (prev?.Type == ItemType.HeaderValue || prev?.Type == ItemType.Url || prev?.Type == ItemType.Version || prev?.Type == ItemType.Comment)
+                if (prev?.Type == ItemType.HeaderValue || 
+                    prev?.Type == ItemType.Url || 
+                    prev?.Type == ItemType.Version || 
+                    prev?.Type == ItemType.RequestVariableName || 
+                    prev?.Type == ItemType.Comment)
                 {
                     items.Add(ToParseItem(matchHeader, start, "name", ItemType.HeaderName)!);
                     items.Add(ToParseItem(matchHeader, start, "value", ItemType.HeaderValue)!);
@@ -178,7 +185,7 @@ namespace RestClient
 
         private void AddVariableReferences(ParseItem token)
         {
-            foreach (Match match in _regexRef.Matches(token.Text))
+            foreach (Match match in _regexReference.Matches(token.Text))
             {
                 ParseItem? reference = ToParseItem(match.Value, token.Start + match.Index, ItemType.Reference, false);
                 token.References.Add(reference);
@@ -249,9 +256,9 @@ namespace RestClient
                         currentRequest?.Children?.Add(currentRequest.Version);
                     }
 
-                    if (currentRequest != null && item.Previous?.Previous?.Type == ItemType.RequestVariableName)
+                    if (currentRequest?.Name != null)
                     {
-                        currentRequest.Name = item.Previous?.Previous?.Text;
+                        currentRequest?.Children?.Add(currentRequest.Name);
                     }
                 }
 

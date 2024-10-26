@@ -1,13 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using Microsoft.VisualStudio.Imaging;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion;
 using Microsoft.VisualStudio.Language.StandardClassification;
-using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.BraceCompletion;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Tagging;
@@ -19,20 +14,22 @@ namespace RestClientVS
     [Export(typeof(ITaggerProvider))]
     [TagType(typeof(IClassificationTag))]
     [ContentType(LanguageFactory.LanguageName)]
-    public class SyntaxHighligting : TokenClassificationTaggerBase
+    public class SyntaxHighlighting : TokenClassificationTaggerBase
     {
         public override Dictionary<object, string> ClassificationMap { get; } = new()
         {
-            { ItemType.VariableName, PredefinedClassificationTypeNames.SymbolDefinition },
-            { ItemType.VariableValue, PredefinedClassificationTypeNames.Text },
-            { ItemType.Method, PredefinedClassificationTypeNames.MarkupNode },
-            { ItemType.Url, PredefinedClassificationTypeNames.Text },
+            { ItemType.VariableName, PredefinedClassificationTypeNames.MarkupNode },
+            { ItemType.VariableValue, PredefinedClassificationTypeNames.String },
+            { ItemType.Method, PredefinedClassificationTypeNames.Keyword },
+            { ItemType.Url, PredefinedClassificationTypeNames.Literal },
             { ItemType.Version, PredefinedClassificationTypeNames.Type },
-            { ItemType.HeaderName, PredefinedClassificationTypeNames.Identifier },
+            { ItemType.HeaderName, PredefinedClassificationTypeNames.Literal },
             { ItemType.HeaderValue, PredefinedClassificationTypeNames.Literal },
             { ItemType.Comment, PredefinedClassificationTypeNames.Comment },
-            { ItemType.Body, PredefinedClassificationTypeNames.Text },
+            { ItemType.Body, PredefinedClassificationTypeNames.Literal },
             { ItemType.Reference, PredefinedClassificationTypeNames.MarkupAttribute },
+            { ItemType.OutputOperator, PredefinedClassificationTypeNames.Operator },
+            { ItemType.RequestVariableName, PredefinedClassificationTypeNames.MarkupNode },
         };
     }
 
