@@ -9,8 +9,8 @@ public partial class Document
 {
     private static class Errors
     {
-        public static Error PL001 { get; } = new("PL001", "The variable \"{0}\" is not defined.", ErrorCategory.Warning);
-        public static Error PL002 { get; } = new("PL002", "\"{0}\" is not a valid absolute URI", ErrorCategory.Warning);
+        public static Error PL001 { get; } = new("PL001", "Unable to resolve reference \"{0}\".", ErrorCategory.Warning);
+        public static Error PL002 { get; } = new("PL002", "\"{0}\" is not a valid absolute URI.", ErrorCategory.Warning);
     }
 
     private static readonly Regex _regexUrl = new(@"^(?<method>get|post|patch|put|delete|head|options|trace)\s*(?<url>[^\s]+)\s*(?<version>HTTP\/\S*)?\s*(?<output>>)?\s*(?<name>@[_a-zA-Z][_a-zA-Z0-9]*)?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -19,52 +19,8 @@ public partial class Document
     private static readonly Regex _regexReference = new(Constants.RegexReference, RegexOptions.Compiled);
 
     public bool IsParsing { get; private set; }
-    public bool IsValid { get; private set; }
 
-    public void Parse()
-    {
-        IsParsing = true;
-        var isSuccess = false;
-        var start = 0;
-
-        try
-        {
-            List<ParseItem> tokens = new();
-
-            foreach (var line in _lines)
-            {
-                IEnumerable<ParseItem>? current = ParseLine(start, line, tokens);
-
-                if (current != null)
-                {
-                    tokens.AddRange(current);
-                }
-                start += line.Length;
-            }
-
-            Items = tokens;
-
-            OrganizeItems();
-            ResolveReferences();
-            ValidateDocument();
-
-            isSuccess = true;
-        }
-        catch (Exception e)
-        {
-            IsValid = false;
-            throw;
-        }
-        finally
-        {
-            IsParsing = false;
-
-            if (isSuccess)
-            {
-                Parsed?.Invoke(this, EventArgs.Empty);
-            }
-        }
-    }
+    public event EventHandler? Parsed;
 
     private IEnumerable<ParseItem> ParseLine(int start, string line, List<ParseItem> tokens)
     {
@@ -196,43 +152,10 @@ public partial class Document
         }
     }
 
-    private void ResolveReferences()
+    private bool IsWwwFormContentHeader(Header header)
     {
-        foreach (var item in Items)
-        {
-            foreach (var reference in item.References)
-            {
-                ReferenceValues[reference.Text] = ReferenceParser.Parse(reference.Text, this);
-            }
-        }
-    }
-
-    private void ValidateDocument()
-    {
-        IsValid = true;
-        foreach (ParseItem item in Items)
-        {
-            foreach (ParseItem? reference in item.References)
-            {
-                if (!ReferenceValues.ContainsKey(reference.Text))
-                {
-                    reference.Errors.Add(Errors.PL001.WithFormat(reference.Text.Trim('{', '}')));
-                    IsValid = false;
-                }
-            }
-
-            // URLs
-            if (item.Type == ItemType.Url)
-            {
-                var uri = item.ResolveReferences();
-
-                if (!Uri.TryCreate(uri, UriKind.Absolute, out _))
-                {
-                    item.Errors.Add(Errors.PL002.WithFormat(uri));
-                    IsValid = false;
-                }
-            }
-        }
+        return header.Name.Text.IsTokenMatch("content-type") &&
+            header.Value.Text.GetFirstToken().IsTokenMatch("application/x-www-form-urlencoded");
     }
 
     private void OrganizeItems()
@@ -308,11 +231,57 @@ public partial class Document
         Requests = requests;
     }
 
-    private bool IsWwwFormContentHeader(Header header)
+    private void ResolveReferences()
     {
-        return header.Name.Text.IsTokenMatch("content-type") &&
-            header.Value.Text.GetFirstToken().IsTokenMatch("application/x-www-form-urlencoded");
+        foreach (var item in Items)
+        {
+            foreach (var reference in item.References)
+            {
+                ReferenceValues[reference.Text] = ReferenceParser.Parse(reference.Text, this);
+                if (ReferenceValues[reference.Text] == reference.Text)
+                {
+                    reference.Errors.Add(Errors.PL001.WithFormat(reference.Text.Trim('{', '}')));
+                }
+            }
+        }
     }
 
-    public event EventHandler? Parsed;
+    public void Parse()
+    {
+        IsParsing = true;
+        var isSuccess = false;
+        var start = 0;
+
+        try
+        {
+            List<ParseItem> tokens = new();
+
+            foreach (var line in _lines)
+            {
+                IEnumerable<ParseItem>? current = ParseLine(start, line, tokens);
+
+                if (current != null)
+                {
+                    tokens.AddRange(current);
+                }
+                start += line.Length;
+            }
+
+            Items = tokens;
+
+            OrganizeItems();
+            ResolveReferences();
+
+            isSuccess = true;
+        }
+        finally
+        {
+            IsParsing = false;
+
+            if (isSuccess)
+            {
+                Parsed?.Invoke(this, EventArgs.Empty);
+            }
+        }
+    }
 }
