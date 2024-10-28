@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using RestClient;
+using RestClient.Parser;
 using Xunit;
 
 namespace RestClientTest
@@ -15,7 +15,7 @@ namespace RestClientTest
         [InlineData(@"Trace https://example.com?hat&ost HTTP/1.1")]
         public void OneLiners(string line)
         {
-            var doc = Document.FromLines(line);
+            var doc = Document.CreateFromLines(line);
             ParseItem request = doc.Items?.First();
             ParseItem method = doc.Items?.ElementAt(1);
 
@@ -31,7 +31,7 @@ namespace RestClientTest
         {
             var lines = new[] { "\r", Environment.NewLine, @"GET https://example.com" };
 
-            var doc = Document.FromLines(lines);
+            var doc = Document.CreateFromLines(lines);
 
             Request request = doc.Requests?.FirstOrDefault();
 
@@ -44,7 +44,7 @@ namespace RestClientTest
         {
             var lines = new[] { "\r", Environment.NewLine, @"GET https://example.com http/1.1" };
 
-            var doc = Document.FromLines(lines);
+            var doc = Document.CreateFromLines(lines);
 
             Request request = doc.Requests?.FirstOrDefault();
 
@@ -61,7 +61,7 @@ namespace RestClientTest
                                 "\r\n",
                                 "post http://bing.com"};
 
-            var doc = Document.FromLines(lines);
+            var doc = Document.CreateFromLines(lines);
 
             Assert.Equal(2, doc.Requests.Count);
         }
@@ -77,7 +77,7 @@ namespace RestClientTest
                 "{\"enabled\": true}"
             };
 
-            var doc = Document.FromLines(lines);
+            var doc = Document.CreateFromLines(lines);
             Request request = doc.Requests?.FirstOrDefault();
 
             Assert.Single(doc.Requests);
@@ -97,7 +97,7 @@ namespace RestClientTest
                 "}"
             };
 
-            var doc = Document.FromLines(lines);
+            var doc = Document.CreateFromLines(lines);
             Request request = doc.Requests.First();
 
             Assert.NotNull(request.Body);
@@ -116,7 +116,7 @@ namespace RestClientTest
                 "&inputLocations=123,45;123,46\r\n"
             };
 
-            var doc = Document.FromLines(lines);
+            var doc = Document.CreateFromLines(lines);
             Request request = doc.Requests.First();
 
             Assert.NotNull(request.Body);
@@ -137,7 +137,7 @@ namespace RestClientTest
 }"
       };
 
-            var doc = Document.FromLines(lines);
+            var doc = Document.CreateFromLines(lines);
             Request first = doc.Requests.FirstOrDefault();
 
             Assert.NotNull(first);
@@ -158,7 +158,7 @@ namespace RestClientTest
         [InlineData("\r\n")]
         public void EmptyLines(string line)
         {
-            var doc = Document.FromLines(line);
+            var doc = Document.CreateFromLines(line);
             ParseItem first = doc.Items?.FirstOrDefault();
 
             Assert.NotNull(first);
@@ -186,7 +186,7 @@ namespace RestClientTest
                                 "\r\n",
                                 "\r\n",};
 
-            var doc = Document.FromLines(text);
+            var doc = Document.CreateFromLines(text);
             Request request = doc.Requests.First();
 
             Assert.NotNull(request.Body);
@@ -199,7 +199,7 @@ namespace RestClientTest
         {
             var text = $"@name = value";
 
-            var doc = Document.FromLines(text);
+            var doc = Document.CreateFromLines(text);
             ParseItem name = doc.Items.FirstOrDefault();
 
             Assert.Equal(0, name.Start);
@@ -216,7 +216,7 @@ namespace RestClientTest
                                 "#comment",
                                 "Accept: gzip" };
 
-            var doc = Document.FromLines(text);
+            var doc = Document.CreateFromLines(text);
 
             Assert.Equal(8, doc.Items.Count);
         }

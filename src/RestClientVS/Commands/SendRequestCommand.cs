@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Threading;
-using RestClient;
 using RestClient.Client;
+using RestClient.Parser;
 
 namespace RestClientVS
 {
@@ -18,7 +18,7 @@ namespace RestClientVS
             if (docView != null)
             {
                 var position = docView.TextView.Caret.Position.BufferPosition.Position;
-                RestClient.Document doc = docView.TextBuffer.GetRestDocument();
+                Document doc = docView.TextBuffer.GetRestDocument();
                 Request request = doc.Requests.FirstOrDefault(r => r.Contains(position));
 
                 if (request != null)
@@ -27,7 +27,7 @@ namespace RestClientVS
                     _source?.Cancel();
                     _source = new CancellationTokenSource();
 
-                    await VS.StatusBar.ShowMessageAsync($"Sending request to {request.Url.ExpandVariables()}...");
+                    await VS.StatusBar.ShowMessageAsync($"Sending request to {request.Url.ResolveReferences()}...");
                     await VS.StatusBar.StartAnimationAsync(StatusAnimation.Sync);
 
                     General options = await General.GetLiveInstanceAsync();                                        

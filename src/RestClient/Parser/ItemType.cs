@@ -1,20 +1,19 @@
-﻿namespace RestClient
+﻿namespace RestClient.Parser;
+
+public enum ItemType
 {
-    public enum ItemType
-    {
-        VariableName,
-        VariableValue,
-        Comment,
-        Method,
-        Url,
-        Version,
-        HeaderName,
-        HeaderValue,
-        Body,
-        Reference,
-        EmptyLine,
-        Request,
-        OutputOperator,
-        RequestVariableName,
-    }
+    VariableName,
+    VariableValue,
+    Comment,
+    Method,
+    Url,
+    Version,
+    HeaderName,
+    HeaderValue,
+    Body,
+    Reference,
+    EmptyLine,
+    Request,
+    OutputOperator,
+    RequestVariableName,
 }

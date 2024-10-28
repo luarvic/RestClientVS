@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Threading;
-using RestClient;
+using RestClient.Parser;
 
 namespace RestClientVS
 {

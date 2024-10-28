@@ -14,6 +14,7 @@ using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.Utilities;
 using RestClient;
+using RestClient.Parser;
 
 namespace RestClientVS.Completion
 {
@@ -44,7 +45,7 @@ namespace RestClientVS.Completion
         {
             ITextSnapshotLine line = triggerLocation.GetContainingLine();
 
-            RestClient.Document document = session.TextView.TextBuffer.GetRestDocument();
+            Document document = session.TextView.TextBuffer.GetRestDocument();
             SnapshotPoint lineStart = line.Start;
             ParseItem token = GetPreviousToken(document, lineStart, out var hasEmptyLine);
 
@@ -76,7 +77,7 @@ namespace RestClientVS.Completion
             ParseItem currentReference = currentToken?.References.FirstOrDefault(v => v.Contains(triggerLocation.Position));
             if (currentReference != null)
             {
-                return Task.FromResult(GetReferenceCompletion(document.VariablesExpanded));
+                return Task.FromResult(GetReferenceCompletion(document.ReferenceValues));
             }
 
             //// User is likely in the key portion of the pair
@@ -94,7 +95,7 @@ namespace RestClientVS.Completion
             return Task.FromResult<CompletionContext>(null);
         }
 
-        private ParseItem GetPreviousToken(RestClient.Document document, SnapshotPoint point, out bool hasEmptyLine)
+        private ParseItem GetPreviousToken(Document document, SnapshotPoint point, out bool hasEmptyLine)
         {
             ParseItem current = null;
             hasEmptyLine = false;
@@ -167,7 +168,7 @@ namespace RestClientVS.Completion
                 return CompletionStartData.DoesNotParticipateInCompletion;
             }
 
-            RestClient.Document document = triggerLocation.Snapshot.TextBuffer.GetRestDocument();
+            Document document = triggerLocation.Snapshot.TextBuffer.GetRestDocument();
             ParseItem item = document?.FindItemFromPosition(triggerLocation.Position);
 
             if (item?.Type == ItemType.Reference)

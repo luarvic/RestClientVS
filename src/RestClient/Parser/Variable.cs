@@ -1,14 +1,13 @@
-﻿namespace RestClient
-{
-    public class Variable
-    {
-        public Variable(ParseItem name, ParseItem value)
-        {
-            Name = name;
-            Value = value;
-        }
+﻿namespace RestClient.Parser;
 
-        public ParseItem Name { get; }
-        public ParseItem Value { get; }
+public class Variable
+{
+    public Variable(ParseItem name, ParseItem value)
+    {
+        Name = name;
+        Value = value;
     }
+
+    public ParseItem Name { get; }
+    public ParseItem Value { get; }
 }

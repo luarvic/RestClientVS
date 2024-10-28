@@ -1,5 +1,5 @@
-﻿using System.Threading.Tasks;
-using RestClient;
+﻿using RestClient.Parser;
+using System.Threading.Tasks;
 
 namespace RestClientTest
 {

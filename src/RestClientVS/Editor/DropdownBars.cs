@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.Package;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.TextManager.Interop;
 using RestClient;
+using RestClient.Parser;
 
 namespace RestClientVS
 {

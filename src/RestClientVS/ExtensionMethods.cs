@@ -1,5 +1,5 @@
 ﻿using Microsoft.VisualStudio.Text;
-using RestClient;
+using RestClient.Parser;
 
 namespace RestClientVS
 {

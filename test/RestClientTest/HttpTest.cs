@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using RestClient;
 using RestClient.Client;
+using RestClient.Parser;
 using Xunit;
 
 namespace RestClientTest
@@ -17,7 +17,7 @@ namespace RestClientTest
         [InlineData("get https://api.github.com/users/madskristensen")]
         public async Task SendAsync(string url)
         {
-            var doc = Document.FromLines(url);
+            var doc = Document.CreateFromLines(url);
 
             RequestResult client = await RequestSender.SendAsync(doc.Requests.First(), TimeSpan.FromSeconds(10));
             var raw = await client.Response.ToRawStringAsync();
@@ -41,7 +41,7 @@ namespace RestClientTest
                 "}"
             };
 
-            var doc = Document.FromLines(lines);
+            var doc = Document.CreateFromLines(lines);
 
             Request request = doc.Requests?.FirstOrDefault();
 

@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-using RestClient;
+using RestClient.Parser;
 using Xunit;
 
 namespace RestClientTest
@@ -14,7 +14,7 @@ namespace RestClientTest
         [InlineData("@name\t=\t value", "value")]
         public void VariableDeclarations(string line, string value)
         {
-            var doc = Document.FromLines(line);
+            var doc = Document.CreateFromLines(line);
 
             Variable first = doc.Variables?.FirstOrDefault();
 
@@ -30,7 +30,7 @@ namespace RestClientTest
             var variable = $"@{name}={value}";
             var request = "GET http://example.com?{{" + name + "}}";
 
-            var doc = Document.FromLines(variable, request);
+            var doc = Document.CreateFromLines(variable, request);
 
             Request r = doc.Requests.FirstOrDefault();
 
@@ -44,7 +44,7 @@ namespace RestClientTest
                        "@host={{hostname}}\r\n",
                        "GET https://{{host}}" };
 
-            var doc = Document.FromLines(text);
+            var doc = Document.CreateFromLines(text);
 
             Request r = doc.Requests.FirstOrDefault();
 
@@ -57,7 +57,7 @@ namespace RestClientTest
             var text = new[] { "get http://ost.com\r\n",
                        "name:{{hostname}}\r\n" };
 
-            var doc = Document.FromLines(text);
+            var doc = Document.CreateFromLines(text);
 
             Assert.True(doc.Requests.First().Headers.First().Value.References.Any());
         }

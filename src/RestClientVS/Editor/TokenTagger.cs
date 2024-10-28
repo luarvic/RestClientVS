@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Adornments;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
-using RestClient;
+using RestClient.Parser;
 
 namespace RestClientVS
 {
@@ -45,7 +45,7 @@ namespace RestClientVS
             // Make sure this is running on a background thread.
             ThreadHelper.ThrowIfOnUIThread();
 
-            List<ITagSpan<TokenTag>> list = new();
+            List<ITagSpan<TokenTag>> list = [];
 
             foreach (ParseItem item in _document.Items)
             {

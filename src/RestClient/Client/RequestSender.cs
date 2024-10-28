@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RestClient.Parser;
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -6,152 +7,151 @@ using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace RestClient.Client
+namespace RestClient.Client;
+
+public static class RequestSender
 {
-    public static class RequestSender
+    private const string SetCookieHeaderName = "Set-Cookie";
+
+    public static async Task<RequestResult> SendAsync(Request request, TimeSpan timeOut, CancellationToken cancellationToken = default)
     {
-        private const string SetCookieHeaderName = "Set-Cookie";
+        RequestResult result = new() { RequestToken = request };
+        HttpRequestMessage? requestMessage = BuildRequest(request, result);
 
-        public static async Task<RequestResult> SendAsync(Request request, TimeSpan timeOut, CancellationToken cancellationToken = default)
+        var handler = new HttpClientHandler
         {
-            RequestResult result = new() { RequestToken = request };
-            HttpRequestMessage? requestMessage = BuildRequest(request, result);
+            AllowAutoRedirect = true,
+            UseDefaultCredentials = true,
+            ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true,
+            CookieContainer = BuildCookieContainer(),
+        };
 
-            var handler = new HttpClientHandler
-            {
-                AllowAutoRedirect = true,
-                UseDefaultCredentials = true,
-                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true,
-                CookieContainer = BuildCookieContainer(),
-            };
-
-            using (var client = new HttpClient(handler))
-            {
-                client.Timeout = timeOut;
-
-                try
-                {
-                    result.Response = await client.SendAsync(requestMessage, cancellationToken);
-                    SetCookies(result.Response.Headers, requestMessage.RequestUri.Host);
-                }
-                catch (TaskCanceledException)
-                {
-                    result.ErrorMessage = $"Request timed out after {timeOut.TotalSeconds}";
-                }
-                catch (Exception ex)
-                {
-                    result.ErrorMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                }
-                finally
-                {
-                    request.Result = result;
-                }
-            }
-
-            return result;
-        }
-
-        private static void SetCookies(HttpHeaders headers, string host)
+        using (var client = new HttpClient(handler))
         {
-            var setCookieHeaders = headers.TryGetValues(SetCookieHeaderName, out var values) ? values : Array.Empty<string>();
-            foreach (var setCookieHeader in setCookieHeaders)
-            {
-                var setCookieHeaderItems = setCookieHeader.Split(';');
-                var setCookieHeaderFirstItem = setCookieHeaderItems.FirstOrDefault();
-                if (setCookieHeaderFirstItem == null)
-                {
-                    continue;
-                }
-                var (key, value) = setCookieHeaderFirstItem.SplitIntoTuple();
-                Cookies.GetInstance().Set(host, key, value);
-            }
-        }
-
-        private static CookieContainer BuildCookieContainer()
-        {
-            var cookieContainer = new CookieContainer();
-            foreach (var cookie in Cookies.GetInstance())
-            {
-                cookieContainer.Add(new Cookie(cookie.Key, cookie.Value, default, cookie.Host));
-            }
-            return cookieContainer;
-        }
-
-        private static HttpRequestMessage BuildRequest(Request request, RequestResult result)
-        {
-            var url = request.Url?.ExpandVariables().Trim();
-            HttpMethod method = GetMethod(request.Method?.Text);
-
-            var message = new HttpRequestMessage(method, url); ;
+            client.Timeout = timeOut;
 
             try
             {
-                AddBody(request, message);
-                AddHeaders(request, message);
+                result.Response = await client.SendAsync(requestMessage, cancellationToken);
+                SetCookies(result.Response.Headers, requestMessage.RequestUri.Host);
+            }
+            catch (TaskCanceledException)
+            {
+                result.ErrorMessage = $"Request timed out after {timeOut.TotalSeconds}";
             }
             catch (Exception ex)
             {
-                result.ErrorMessage = ex.Message;
+                result.ErrorMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
             }
-
-            return message;
+            finally
+            {
+                request.Result = result;
+            }
         }
 
-        private static void AddBody(Request request, HttpRequestMessage message)
+        return result;
+    }
+
+    private static void SetCookies(HttpHeaders headers, string host)
+    {
+        var setCookieHeaders = headers.TryGetValues(SetCookieHeaderName, out var values) ? values : Array.Empty<string>();
+        foreach (var setCookieHeader in setCookieHeaders)
         {
-            if (request.Body == null)
+            var setCookieHeaderItems = setCookieHeader.Split(';');
+            var setCookieHeaderFirstItem = setCookieHeaderItems.FirstOrDefault();
+            if (setCookieHeaderFirstItem == null)
             {
-                return;
+                continue;
             }
+            var (key, value) = setCookieHeaderFirstItem.SplitIntoTuple();
+            Cookies.GetInstance().Set(host, key, value);
+        }
+    }
 
-            if (message.Method == HttpMethod.Get)
-            {
-                throw new HttpRequestException($"A request body is not supported for {message.Method} requests.");
-            }
+    private static CookieContainer BuildCookieContainer()
+    {
+        var cookieContainer = new CookieContainer();
+        foreach (var cookie in Cookies.GetInstance())
+        {
+            cookieContainer.Add(new Cookie(cookie.Key, cookie.Value, default, cookie.Host));
+        }
+        return cookieContainer;
+    }
 
-            message.Content = new StringContent(request.ExpandBodyVariables());
+    private static HttpRequestMessage BuildRequest(Request request, RequestResult result)
+    {
+        var url = request.Url?.ResolveReferences().Trim();
+        HttpMethod method = GetMethod(request.Method?.Text);
+
+        var message = new HttpRequestMessage(method, url); ;
+
+        try
+        {
+            AddBody(request, message);
+            AddHeaders(request, message);
+        }
+        catch (Exception ex)
+        {
+            result.ErrorMessage = ex.Message;
         }
 
-        public static void AddHeaders(Request request, HttpRequestMessage message)
+        return message;
+    }
+
+    private static void AddBody(Request request, HttpRequestMessage message)
+    {
+        if (request.Body == null)
         {
-            if (request.Headers != null)
+            return;
+        }
+
+        if (message.Method == HttpMethod.Get)
+        {
+            throw new HttpRequestException($"A request body is not supported for {message.Method} requests.");
+        }
+
+        message.Content = new StringContent(request.ResolveBodyReferences());
+    }
+
+    public static void AddHeaders(Request request, HttpRequestMessage message)
+    {
+        if (request.Headers != null)
+        {
+            foreach (Header header in request.Headers)
             {
-                foreach (Header header in request.Headers)
+                var name = header?.Name?.ResolveReferences();
+                var value = header?.Value?.ResolveReferences();
+
+                if (name!.Equals("content-type", StringComparison.OrdinalIgnoreCase) && request.Body != null)
                 {
-                    var name = header?.Name?.ExpandVariables();
-                    var value = header?.Value?.ExpandVariables();
+                    // Remove name-value pairs that can follow the MIME type
+                    string mimeType = value!.GetFirstToken();
 
-                    if (name!.Equals("content-type", StringComparison.OrdinalIgnoreCase) && request.Body != null)
-                    {
-                        // Remove name-value pairs that can follow the MIME type
-                        string mimeType = value!.GetFirstToken();
-
-                        message.Content = new StringContent(request.ExpandBodyVariables(), System.Text.Encoding.UTF8, mimeType);
-                    }
-
-                    message.Headers.TryAddWithoutValidation(name, value);
+                    message.Content = new StringContent(request.ResolveBodyReferences(), System.Text.Encoding.UTF8, mimeType);
                 }
-            }
 
-            if (!message.Headers.Contains("User-Agent"))
-            {
-                message.Headers.Add("User-Agent", nameof(RestClient));
+                message.Headers.TryAddWithoutValidation(name, value);
             }
         }
 
-        private static HttpMethod GetMethod(string? methodName)
+        if (!message.Headers.Contains("User-Agent"))
         {
-            return methodName?.ToLowerInvariant() switch
-            {
-                "head" => HttpMethod.Head,
-                "post" => HttpMethod.Post,
-                "put" => HttpMethod.Put,
-                "delete" => HttpMethod.Delete,
-                "options" => HttpMethod.Options,
-                "trace" => HttpMethod.Trace,
-                "patch" => new HttpMethod("PATCH"),
-                _ => HttpMethod.Get,
-            };
+            message.Headers.Add("User-Agent", nameof(RestClient));
         }
+    }
+
+    private static HttpMethod GetMethod(string? methodName)
+    {
+        return methodName?.ToLowerInvariant() switch
+        {
+            "head" => HttpMethod.Head,
+            "post" => HttpMethod.Post,
+            "put" => HttpMethod.Put,
+            "delete" => HttpMethod.Delete,
+            "options" => HttpMethod.Options,
+            "trace" => HttpMethod.Trace,
+            "patch" => new HttpMethod("PATCH"),
+            _ => HttpMethod.Get,
+        };
     }
 }

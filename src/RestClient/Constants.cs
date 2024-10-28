@@ -4,5 +4,6 @@
     {
         public const char CommentChar = '#';
         public const string MarketplaceId = "MadsKristensen.RestClient";
+        public const string RegexReference = @"{{(?<object>[\w.-]+)}}";
     }
 }
