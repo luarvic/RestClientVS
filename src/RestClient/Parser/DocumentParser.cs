@@ -246,8 +246,13 @@ public partial class Document
         }
     }
 
-    public void Parse()
+    public void Parse(bool refreshOnly = false)
     {
+        if (refreshOnly)
+        {
+            Parsed?.Invoke(this, EventArgs.Empty);
+        }
+
         IsParsing = true;
         var isSuccess = false;
         var start = 0;

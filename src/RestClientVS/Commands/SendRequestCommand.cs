@@ -47,6 +47,8 @@ namespace RestClientVS
                     request.EndActive(result.Response?.IsSuccessStatusCode ?? false);
                     await VS.StatusBar.ShowMessageAsync("Request completed");
                     await VS.StatusBar.EndAnimationAsync(StatusAnimation.Sync);
+
+                    doc.Parse(refreshOnly: true);
                 }
             }
         }

@@ -42,8 +42,8 @@ namespace RestClientVS
 
         public override Task TokenizeAsync()
         {
-            // Make sure this is running on a background thread.
-            ThreadHelper.ThrowIfOnUIThread();
+            // Uncomment to make sure this is running on a background thread.
+            // ThreadHelper.ThrowIfOnUIThread();
 
             List<ITagSpan<TokenTag>> list = [];
 
