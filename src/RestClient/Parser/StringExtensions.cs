@@ -28,7 +28,7 @@ public static class StringExtensions
     /// <param name="remainder">The output parameter containing the string after the segment.</param>
     /// <param name="separator">The separator.</param>
     /// <returns>The segment.</returns>
-    public static string GetSegment(this string input, int index, out string remainder, string separator = ".")
+    public static string GetSegment(this string input, int index, out string remainder, string separator = Constants.RegexReferenceDelimiter)
     {
         var segments = input.Split(separator.ToCharArray()).ToArray();
         remainder = string.Join(separator, segments.Skip(index + 1).ToArray());
